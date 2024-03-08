@@ -13,6 +13,9 @@ public class Tail : MonoBehaviour
 
     private void Update()
     {
+        if (networkedOwner == null) return;
+        if (followTransform == null) return;
+
         _targetPosition = followTransform.position - followTransform.forward * distance;
         _targetPosition += (transform.position - _targetPosition) * delayTime;
         _targetPosition.z = 0f;

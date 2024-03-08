@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -9,6 +10,9 @@ public class PlayerLength : NetworkBehaviour
     private GameObject tailPrefab;
 
     public NetworkVariable<ushort> length = new(1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    [CanBeNull]
+    public static event System.Action<ushort> ChangedLengthEvent;
 
     private List<GameObject> _tails;
     private Transform _lastTail;
@@ -22,21 +26,30 @@ public class PlayerLength : NetworkBehaviour
 
         _collider = GetComponent<Collider2D>();
 
-        if (!IsServer) length.OnValueChanged += LenghtChanged;
+        if (!IsServer) length.OnValueChanged += LenghtChangedEvent;
     }
 
     // this will be colled by the server
     [ContextMenu("Add Length")]
-    private void AddLength()
+    public void AddLength()
     {
         length.Value += 1;
-        InstantiateTail();
+        LenghtChanged();
     }
 
-    private void LenghtChanged(ushort previousValue, ushort newValue)
+    private void LenghtChanged()
+    {
+        InstantiateTail();
+
+        if (!IsOwner) return;
+
+        ChangedLengthEvent?.Invoke(length.Value);
+    }
+
+    private void LenghtChangedEvent(ushort previousValue, ushort newValue)
     {
         Debug.Log("LenghtChanged callback");
-        InstantiateTail();
+        LenghtChanged();
     }
 
     private void InstantiateTail()
